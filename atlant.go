@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"os"
 )
 
@@ -55,8 +56,19 @@ func readCSV(file_path string) {
 	for _, record := range records {
 		checkStructure(record)
 
-		fmt.Printf("Product: %s, Price: %s\n", record[0], record[1])
+		product := record[0]
+		price, err := convertStringToFloat(record[1])
+		
+		errorCheck(err)
+
+		fmt.Printf("Product: %s, Price: %f\n", product, price)
 	}
+}
+
+func convertStringToFloat(str string) (float64, error) {
+	  fnumber, err := strconv.ParseFloat(str, 64)
+
+	  return fnumber, err
 }
 
 func errorCheck(err error) {
