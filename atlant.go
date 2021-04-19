@@ -21,8 +21,8 @@ func main() {
 	args := os.Args
 
 	file_url := args[1]
-	// file_path := generateTempFilePath()
-	file_path := generateRandomFileName(64)
+
+	file_path := randomFile(DOWNLOAD_DIRECTORY, 64)
 
 	err := downloadFile(file_url, file_path)
 
@@ -58,7 +58,7 @@ func readCSV(file_path string) {
 
 		product := record[0]
 		price, err := convertStringToFloat(record[1])
-		
+
 		errorCheck(err)
 
 		fmt.Printf("Product: %s, Price: %f\n", product, price)
@@ -116,7 +116,7 @@ func downloadFile(url string, filepath string) error {
 	return err
 }
 
-func generateRandomFileName(n int) string {
+func randomFile(dir string, n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 	s := make([]rune, n)
@@ -125,7 +125,7 @@ func generateRandomFileName(n int) string {
 		s[i] = letters[rand.Intn(len(letters))]
 	}
 
-	return fmt.Sprintf("%s/%s.txt", DOWNLOAD_DIRECTORY, string(s))
+	return fmt.Sprintf("%s/%s.txt", dir, string(s))
 }
 
 func deleteFile(file_path string) error {
