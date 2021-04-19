@@ -1,6 +1,12 @@
 package main
 
 import (
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"context"
+	"time"
+
 	"github.com/gabriel-vasile/mimetype"
 	"encoding/csv"
 	"io/ioutil"
@@ -12,12 +18,17 @@ import (
 	"os"
 )
 
-const ERROR_INCORRECT_HEADERS = "Incorrect CSV file headers"
 const ERROR_INCORRECT_STRUCTURE = "Incorrect CSV file structure"
+const ERROR_INCORRECT_HEADERS 	= "Incorrect CSV file headers"
 const ERROR_INCORRECT_FILE_TYPE = "Incorrect file type"
 const DOWNLOAD_DIRECTORY = "./tmp"
 
+const DB_NAME = "atlant"
+const DB_COLLECTION_NAME = "products"
+
 func main() {
+	initMongo()
+
 	args := os.Args
 
 	file_url := args[1]
@@ -35,6 +46,29 @@ func main() {
 	err = deleteFile(file_path)
 
 	errorCheck(err)
+}
+
+func initMongo() {
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	
+	errorCheck(err)
+	
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
+
+	errorCheck(err)
+
+	defer client.Disconnect(ctx)
+
+	collection := client.Database(DB_NAME).Collection(DB_COLLECTION_NAME)
+
+	fmt.Printf("%s\n",collection)
+
+	err = client.Ping(ctx, nil)
+
+	errorCheck(err)
+
+	fmt.Printf("[+] Connected to MongoDB\n")
 }
 
 func readCSV(file_path string) {
