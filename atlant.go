@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"log"
-	"io/ioutil"
 	"encoding/csv"
-	"net/http"
-	"math/rand"
+	"fmt"
 	"github.com/gabriel-vasile/mimetype"
+	"io/ioutil"
+	"log"
+	"math/rand"
+	"net/http"
+	"os"
 )
 
 const ERROR_INCORRECT_HEADERS = "Incorrect CSV file headers"
@@ -26,7 +26,6 @@ func main() {
 	err := downloadFile(file_url, file_path)
 
 	errorCheck(err)
-	
 
 	fmt.Printf("[+] Starting to parse %s\n", file_path)
 
@@ -87,8 +86,8 @@ func downloadFile(url string, filepath string) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
 
-	mime := mimetype.Detect(body) 
-	
+	mime := mimetype.Detect(body)
+
 	err = checkMimeType(mime)
 
 	errorCheck(err)
@@ -106,15 +105,15 @@ func downloadFile(url string, filepath string) error {
 }
 
 func generateRandomFileName(n int) string {
-    var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
- 
-    s := make([]rune, n)
-    
-    for i := range s {
-        s[i] = letters[rand.Intn(len(letters))]
-    }
-    
-    return fmt.Sprintf("%s/%s.txt", DOWNLOAD_DIRECTORY ,string(s))
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	s := make([]rune, n)
+
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+
+	return fmt.Sprintf("%s/%s.txt", DOWNLOAD_DIRECTORY, string(s))
 }
 
 func deleteFile(file_path string) error {
@@ -124,12 +123,9 @@ func deleteFile(file_path string) error {
 }
 
 func checkMimeType(mime *mimetype.MIME) error {
-	if(mime.Is("text/plain") == false) {
+	if mime.Is("text/plain") == false {
 		return fmt.Errorf("%s", ERROR_INCORRECT_FILE_TYPE)
 	}
 
 	return nil
 }
-
-
-
