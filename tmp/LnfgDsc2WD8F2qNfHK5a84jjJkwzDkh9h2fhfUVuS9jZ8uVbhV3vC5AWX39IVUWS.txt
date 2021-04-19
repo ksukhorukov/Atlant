@@ -1,2 +1,0 @@
-PRODUCT NAME;PRICE
-test_product;99.9
