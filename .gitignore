@@ -11,5 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 atlant
+mongo.go
+mongo_mock
+atlant_backup
 # Dependency directories (remove the comment below to include it)
 # vendor/

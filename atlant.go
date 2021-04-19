@@ -2,6 +2,7 @@ package main
 
 import (
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"context"
@@ -33,11 +34,13 @@ type Record struct {
 	RequestTime time.Time
 }
 
-func main() {
-	initMongo()
 
-	// request_time := time.Now()
-	// fmt.Printf("%T %s\n", request_time, request_time)
+func main() {
+	context, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+	client, collection := initMongo(context)
+
+	defer client.Disconnect(context)
 
 	args := os.Args
 
@@ -51,37 +54,38 @@ func main() {
 
 	fmt.Printf("[+] Starting to parse %s\n", file_path)
 
-	readCSV(file_path)
+	timestamp := time.Now()
+
+	parseCSV(file_path, collection, timestamp)
 
 	err = deleteFile(file_path)
 
 	errorCheck(err)
 }
 
-func initMongo() {
+func initMongo(mongo_context context.Context)(mongo.Client, mongo.Collection)  {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	
 	errorCheck(err)
-	
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
+
+	err = client.Connect(mongo_context)
 
 	errorCheck(err)
 
-	defer client.Disconnect(ctx)
+	fmt.Printf("MONGO CLIENT TYPE: %T\n", client)
 
 	collection := client.Database(DB_NAME).Collection(DB_COLLECTION_NAME)
 
-	fmt.Printf("%s\n",collection)
-
-	err = client.Ping(ctx, nil)
+	err = client.Ping(mongo_context, nil)
 
 	errorCheck(err)
 
 	fmt.Printf("[+] Connected to MongoDB\n")
+
+	return *client, *collection
 }
 
-func readCSV(file_path string) {
+func parseCSV(file_path string, collection mongo.Collection, timestamp time.Time) {
 	file, err := os.Open(file_path)
 	errorCheck(err)
 
@@ -106,7 +110,42 @@ func readCSV(file_path string) {
 		errorCheck(err)
 
 		fmt.Printf("Product: %s, Price: %f\n", product, price)
+
+		saveResults(collection, product, price, timestamp)
 	}
+}
+
+func saveResults(collection mongo.Collection, product string, price float64, timestamp time.Time) {
+		var result Record
+		
+		err := collection.FindOne(context.TODO(), bson.D{{"product", product}}).Decode(&result)
+
+		if err != nil { // nothing found
+			record := Record{product, price, 0, timestamp}
+			_, err = collection.InsertOne(context.TODO(), record)
+
+			errorCheck(err)
+		} else { // need to update existing record
+			if(result.Price == price) { // exit if nothing changed
+ 				return 
+ 			}
+
+			filter := bson.D{{"product", product}}
+ 
+ 			update := bson.D{
+    		{"$set", bson.D{
+    			{"price", price},
+	        {"timespricechanged", result.TimesPriceChanged + 1},
+	        {"requesttime", timestamp},
+  	  	}},
+  	  }
+
+  	  _, err = collection.UpdateOne(context.TODO(), filter, update)
+
+  	  errorCheck(err)
+  	}
+
+  	fmt.Printf("[+] %s successfully updated!\n", product)
 }
 
 func convertStringToFloat(str string) (float64, error) {
