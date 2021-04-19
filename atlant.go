@@ -26,8 +26,18 @@ const DOWNLOAD_DIRECTORY = "./tmp"
 const DB_NAME = "atlant"
 const DB_COLLECTION_NAME = "products"
 
+type Record struct {
+	Product string 
+	Price float64
+	TimesPriceChanged int
+	RequestTime time.Time
+}
+
 func main() {
 	initMongo()
+
+	// request_time := time.Now()
+	// fmt.Printf("%T %s\n", request_time, request_time)
 
 	args := os.Args
 
