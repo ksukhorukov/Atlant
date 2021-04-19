@@ -1,14 +1,14 @@
 package main
 
 import (
-	"encoding/csv"
-	"fmt"
 	"github.com/gabriel-vasile/mimetype"
+	"encoding/csv"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
+	"fmt"
+	"log"
 	"os"
 )
 
