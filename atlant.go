@@ -42,25 +42,82 @@ func main() {
 
 	defer client.Disconnect(mng_context)
 
-	args := os.Args
+	// args := os.Args
 
-	file_url := args[1]
+	// file_url := args[1]
 
-	file_path := randomFile(DOWNLOAD_DIRECTORY, 64)
+	// file_path := randomFile(DOWNLOAD_DIRECTORY, 64)
 
-	err := downloadFile(file_url, file_path)
+	// err := downloadFile(file_url, file_path)
+
+	// errorCheck(err)
+
+	// fmt.Printf("[+] Starting to parse %s\n", file_path)
+
+	// timestamp := time.Now()
+
+	// parseCSV(file_path, collection, mng_context, timestamp)
+
+	// err = deleteFile(file_path)
+
+	// errorCheck(err)
+
+	column := "price" 
+	//filter := "ascending"
+	filter := "descending"
+
+	var results []Record
+
+	results = search(1, 10, column, filter, collection, mng_context)
+
+	printResults(results)
+}
+
+func search(page int, per_page int, column string, filter string, collection mongo.Collection, mng_context context.Context) []Record {
+	var results []Record
+	var order int
+
+	if(filter == "ascending") {
+		order = 1
+	} else {
+		order = -1
+	}
+
+	opts := options.Find().SetSort(bson.D{{column, order}})
+
+	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)	
 
 	errorCheck(err)
 
-	fmt.Printf("[+] Starting to parse %s\n", file_path)
-
-	timestamp := time.Now()
-
-	parseCSV(file_path, collection, mng_context, timestamp)
-
-	err = deleteFile(file_path)
+	err = cursor.All(mng_context, &results)
 
 	errorCheck(err)
+
+	cursor_index := getCursorIndex(page, per_page, len(results))
+
+	return results[cursor_index:per_page]
+}
+
+func getCursorIndex(page int, per_page int, length int) int {
+	if(page == 1) {
+		return 0
+	}
+
+	if(page > 1) {
+		return (page * per_page) - 1
+	}
+
+	if(page < 0 && ((page * -1) * per_page <= length)) {
+		return (length + (page * per_page)) - 1
+	}
+
+	return 0
+}
+
+func printResults(results []Record) {
+	for _, result := range results {
+		fmt.Printf("%s %f %s %d\n", result.Product, result.Price, result.RequestTime, result.TimesPriceChanged)
+	}	
 }
 
 func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
