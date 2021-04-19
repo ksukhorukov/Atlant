@@ -36,11 +36,11 @@ type Record struct {
 
 
 func main() {
-	context, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	mng_context, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-	client, collection := initMongo(context)
+	client, collection := initMongo(mng_context)
 
-	defer client.Disconnect(context)
+	defer client.Disconnect(mng_context)
 
 	args := os.Args
 
@@ -56,19 +56,19 @@ func main() {
 
 	timestamp := time.Now()
 
-	parseCSV(file_path, collection, timestamp)
+	parseCSV(file_path, collection, mng_context, timestamp)
 
 	err = deleteFile(file_path)
 
 	errorCheck(err)
 }
 
-func initMongo(mongo_context context.Context)(mongo.Client, mongo.Collection)  {
+func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	
 	errorCheck(err)
 
-	err = client.Connect(mongo_context)
+	err = client.Connect(mng_context)
 
 	errorCheck(err)
 
@@ -76,7 +76,7 @@ func initMongo(mongo_context context.Context)(mongo.Client, mongo.Collection)  {
 
 	collection := client.Database(DB_NAME).Collection(DB_COLLECTION_NAME)
 
-	err = client.Ping(mongo_context, nil)
+	err = client.Ping(mng_context, nil)
 
 	errorCheck(err)
 
@@ -85,7 +85,7 @@ func initMongo(mongo_context context.Context)(mongo.Client, mongo.Collection)  {
 	return *client, *collection
 }
 
-func parseCSV(file_path string, collection mongo.Collection, timestamp time.Time) {
+func parseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp time.Time) {
 	file, err := os.Open(file_path)
 	errorCheck(err)
 
@@ -111,18 +111,18 @@ func parseCSV(file_path string, collection mongo.Collection, timestamp time.Time
 
 		fmt.Printf("Product: %s, Price: %f\n", product, price)
 
-		saveResults(collection, product, price, timestamp)
+		saveResults(collection, mng_context, product, price, timestamp)
 	}
 }
 
-func saveResults(collection mongo.Collection, product string, price float64, timestamp time.Time) {
+func saveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp time.Time) {
 		var result Record
 		
-		err := collection.FindOne(context.TODO(), bson.D{{"product", product}}).Decode(&result)
+		err := collection.FindOne(mng_context, bson.D{{"product", product}}).Decode(&result)
 
 		if err != nil { // nothing found
 			record := Record{product, price, 0, timestamp}
-			_, err = collection.InsertOne(context.TODO(), record)
+			_, err = collection.InsertOne(mng_context, record)
 
 			errorCheck(err)
 		} else { // need to update existing record
@@ -140,7 +140,7 @@ func saveResults(collection mongo.Collection, product string, price float64, tim
   	  	}},
   	  }
 
-  	  _, err = collection.UpdateOne(context.TODO(), filter, update)
+  	  _, err = collection.UpdateOne(mng_context, filter, update)
 
   	  errorCheck(err)
   	}
