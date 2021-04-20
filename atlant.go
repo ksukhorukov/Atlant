@@ -95,7 +95,14 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 
 	results = search(page, results_per_page, column, order, collection, mng_context)
 
-	return &api.ListResponse{Results: results}, nil
+	data_size := len(results)
+	data := make([]*api.Result, data_size)
+
+	for i := 0; i < data_size - 1; i++ {
+		data[i] = &results[i]
+	}
+
+	return &api.ListResponse{Results: data}, nil
 }
 
 
