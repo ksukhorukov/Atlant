@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/ksukhorukov/atlant/proto";
+
+service Api {
+  rpc Fetch(FetchRequest) returns (FetchResponse) {}
+  rpc List(SearchRequest) returns (SearchResponse) {}
+}
+
+message FetchRequest {
+	string url = 1;
+}
+
+message FetchResponse {
+	int32 count = 1;
+}
+
+message SearchRequest {
+	string field = 1;
+	int32 order = 2;
+	int32 page_number = 3;
+	int32 results_per_page = 4;
+}
+
+message SearchResponse {
+	repeated Result results = 1;
+}
+
+message Result {
+	string product = 1;
+	float price = 2;
+	int32 timespricechanged = 3;
+	int32 requesttime = 4;
+}

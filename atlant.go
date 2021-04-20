@@ -1,6 +1,7 @@
 package main
 
 import (
+	api "github.com/ksukhorukov/atlant/api"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
