@@ -1,7 +1,8 @@
 package main
 
 import (
-	api "github.com/ksukhorukov/atlant/proto"
+	 api "github.com/ksukhorukov/atlant/proto"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -19,6 +20,15 @@ import (
 	"log"
 	"os"
 )
+
+const (
+	port = ":31337"
+)
+
+// server is used to implement helloworld.GreeterServer.
+type server struct {
+	api.UnimplementedApiServer
+}
 
 const ERROR_INCORRECT_STRUCTURE = "Incorrect CSV file structure"
 const ERROR_INCORRECT_HEADERS 	= "Incorrect CSV file headers"
@@ -43,6 +53,8 @@ func main() {
 
 	defer client.Disconnect(mng_context)
 
+
+
 	// args := os.Args
 
 	// file_url := args[1]
@@ -63,15 +75,15 @@ func main() {
 
 	// errorCheck(err)
 
-	column := "price" 
-	//filter := "ascending"
-	filter := "descending"
+	// column := "price" 
+	// //filter := "ascending"
+	// filter := "descending"
 
-	var results []Record
+	// var results []Record
 
-	results = search(1, 10, column, filter, collection, mng_context)
+	// results = search(1, 10, column, filter, collection, mng_context)
 
-	printResults(results)
+	// printResults(results)
 }
 
 func search(page int, per_page int, column string, filter string, collection mongo.Collection, mng_context context.Context) []Record {
