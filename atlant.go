@@ -3,6 +3,8 @@ package main
 import (
 	 api "github.com/ksukhorukov/atlant/proto"
 
+	"google.golang.org/grpc"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,6 +20,7 @@ import (
 	"strconv"
 	"fmt"
 	"log"
+	"net"
 	"os"
 )
 
@@ -45,35 +48,46 @@ type Record struct {
 	RequestTime time.Time
 }
 
-
-func main() {
+func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchResponse, error) {
 	mng_context, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
 	client, collection := initMongo(mng_context)
 
 	defer client.Disconnect(mng_context)
 
+	log.Printf("Received: %v", in.GetUrl())
 
+	file_path := randomFile(DOWNLOAD_DIRECTORY, 64)
 
-	// args := os.Args
+	err := downloadFile(in.GetUrl(), file_path)
 
-	// file_url := args[1]
+	errorCheck(err)
 
-	// file_path := randomFile(DOWNLOAD_DIRECTORY, 64)
+	fmt.Printf("[+] Starting to parse %s\n", file_path)
 
-	// err := downloadFile(file_url, file_path)
+	timestamp := time.Now()
 
-	// errorCheck(err)
+	count := parseCSV(file_path, collection, mng_context, timestamp)
 
-	// fmt.Printf("[+] Starting to parse %s\n", file_path)
+	err = deleteFile(file_path)
 
-	// timestamp := time.Now()
+	errorCheck(err)
 
-	// parseCSV(file_path, collection, mng_context, timestamp)
+	return &api.FetchResponse{Count: count}, nil
+}
 
-	// err = deleteFile(file_path)
+func main() {
+	lis, err := net.Listen("tcp", port)
+	
+	errorCheck(err)
 
-	// errorCheck(err)
+	s := grpc.NewServer()
+	
+	api.RegisterApiServer(s, &server{})
+	
+	err = s.Serve(lis)
+
+	errorCheck(err)
 
 	// column := "price" 
 	// //filter := "ascending"
@@ -155,7 +169,11 @@ func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	return *client, *collection
 }
 
-func parseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp time.Time) {
+func parseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp time.Time) int32 {
+	var counter int32
+
+	counter = 0
+
 	file, err := os.Open(file_path)
 	errorCheck(err)
 
@@ -181,12 +199,18 @@ func parseCSV(file_path string, collection mongo.Collection, mng_context context
 
 		fmt.Printf("Product: %s, Price: %f\n", product, price)
 
-		saveResults(collection, mng_context, product, price, timestamp)
+		if(saveResults(collection, mng_context, product, price, timestamp)) {
+			counter += 1
+		}
 	}
+
+	return counter
 }
 
-func saveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp time.Time) {
+func saveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp time.Time) bool {
 		var result Record
+
+		saved := false
 		
 		err := collection.FindOne(mng_context, bson.D{{"product", product}}).Decode(&result)
 
@@ -197,7 +221,7 @@ func saveResults(collection mongo.Collection, mng_context context.Context, produ
 			errorCheck(err)
 		} else { // need to update existing record
 			if(result.Price == price) { // exit if nothing changed
- 				return 
+ 				return false
  			}
 
 			filter := bson.D{{"product", product}}
@@ -213,9 +237,13 @@ func saveResults(collection mongo.Collection, mng_context context.Context, produ
   	  _, err = collection.UpdateOne(mng_context, filter, update)
 
   	  errorCheck(err)
+
+  	  saved = true
   	}
 
   	fmt.Printf("[+] %s successfully updated!\n", product)
+
+  	return saved
 }
 
 func convertStringToFloat(str string) (float64, error) {

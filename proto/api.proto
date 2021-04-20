@@ -6,7 +6,7 @@ option go_package = "github.com/ksukhorukov/atlant/proto";
 
 service Api {
   rpc Fetch(FetchRequest) returns (FetchResponse) {}
-  rpc List(SearchRequest) returns (SearchResponse) {}
+  rpc List(ListRequest) returns (ListResponse) {}
 }
 
 message FetchRequest {
@@ -17,14 +17,14 @@ message FetchResponse {
 	int32 count = 1;
 }
 
-message SearchRequest {
+message ListRequest {
 	string field = 1;
 	int32 order = 2;
 	int32 page_number = 3;
 	int32 results_per_page = 4;
 }
 
-message SearchResponse {
+message ListResponse {
 	repeated Result results = 1;
 }
 

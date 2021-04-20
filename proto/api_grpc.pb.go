@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ApiClient interface {
 	Fetch(ctx context.Context, in *FetchRequest, opts ...grpc.CallOption) (*FetchResponse, error)
-	List(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
+	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 }
 
 type apiClient struct {
@@ -39,8 +39,8 @@ func (c *apiClient) Fetch(ctx context.Context, in *FetchRequest, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *apiClient) List(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
-	out := new(SearchResponse)
+func (c *apiClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
+	out := new(ListResponse)
 	err := c.cc.Invoke(ctx, "/api.Api/List", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (c *apiClient) List(ctx context.Context, in *SearchRequest, opts ...grpc.Ca
 // for forward compatibility
 type ApiServer interface {
 	Fetch(context.Context, *FetchRequest) (*FetchResponse, error)
-	List(context.Context, *SearchRequest) (*SearchResponse, error)
+	List(context.Context, *ListRequest) (*ListResponse, error)
 	mustEmbedUnimplementedApiServer()
 }
 
@@ -64,7 +64,7 @@ type UnimplementedApiServer struct {
 func (UnimplementedApiServer) Fetch(context.Context, *FetchRequest) (*FetchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Fetch not implemented")
 }
-func (UnimplementedApiServer) List(context.Context, *SearchRequest) (*SearchResponse, error) {
+func (UnimplementedApiServer) List(context.Context, *ListRequest) (*ListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedApiServer) mustEmbedUnimplementedApiServer() {}
@@ -99,7 +99,7 @@ func _Api_Fetch_Handler(srv interface{}, ctx context.Context, dec func(interface
 }
 
 func _Api_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchRequest)
+	in := new(ListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func _Api_List_Handler(srv interface{}, ctx context.Context, dec func(interface{
 		FullMethod: "/api.Api/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServer).List(ctx, req.(*SearchRequest))
+		return srv.(ApiServer).List(ctx, req.(*ListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
