@@ -26,20 +26,19 @@ import (
 
 const (
 	port = ":31337"
+	
+	ERROR_INCORRECT_STRUCTURE = "Incorrect CSV file structure"
+	ERROR_INCORRECT_HEADERS 	= "Incorrect CSV file headers"
+	ERROR_INCORRECT_FILE_TYPE = "Incorrect file type"
+	DOWNLOAD_DIRECTORY = "./tmp"
+
+	DB_NAME = "atlant"
+	DB_COLLECTION_NAME = "products"
 )
 
-// server is used to implement helloworld.GreeterServer.
 type server struct {
 	api.UnimplementedApiServer
 }
-
-const ERROR_INCORRECT_STRUCTURE = "Incorrect CSV file structure"
-const ERROR_INCORRECT_HEADERS 	= "Incorrect CSV file headers"
-const ERROR_INCORRECT_FILE_TYPE = "Incorrect file type"
-const DOWNLOAD_DIRECTORY = "./tmp"
-
-const DB_NAME = "atlant"
-const DB_COLLECTION_NAME = "products"
 
 type Record struct {
 	Product string 
@@ -76,6 +75,30 @@ func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchRes
 	return &api.FetchResponse{Count: count}, nil
 }
 
+func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListResponse, error) {
+	mng_context, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+	client, collection := initMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	column := in.GetColumn()
+	order := in.GetOrder()
+	page := in.GetPageNumber()
+	results_per_page := in.GetResultsPerPage()
+
+	log.Printf("Received. Column: %v, Order: %v, PageNumber: %v, ResultsPerPage: %v", 
+		column, order, page, results_per_page)
+
+
+	var results []api.Result
+
+	results = search(page, results_per_page, column, order, collection, mng_context)
+
+	return &api.ListResponse{Results: results}, nil
+}
+
+
 func main() {
 	lis, err := net.Listen("tcp", port)
 	
@@ -88,28 +111,11 @@ func main() {
 	err = s.Serve(lis)
 
 	errorCheck(err)
-
-	// column := "price" 
-	// //filter := "ascending"
-	// filter := "descending"
-
-	// var results []Record
-
-	// results = search(1, 10, column, filter, collection, mng_context)
-
-	// printResults(results)
 }
 
-func search(page int, per_page int, column string, filter string, collection mongo.Collection, mng_context context.Context) []Record {
-	var results []Record
-	var order int
-
-	if(filter == "ascending") {
-		order = 1
-	} else {
-		order = -1
-	}
-
+func search(page int32, per_page int32, column string, order int32, collection mongo.Collection, mng_context context.Context) []api.Result {
+	var results []api.Result
+	
 	opts := options.Find().SetSort(bson.D{{column, order}})
 
 	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)	
@@ -120,12 +126,12 @@ func search(page int, per_page int, column string, filter string, collection mon
 
 	errorCheck(err)
 
-	cursor_index := getCursorIndex(page, per_page, len(results))
+	cursor_index := getCursorIndex(page, per_page, int32(len(results)))
 
 	return results[cursor_index:per_page]
 }
 
-func getCursorIndex(page int, per_page int, length int) int {
+func getCursorIndex(page int32, per_page int32, length int32) int32 {
 	if(page == 1) {
 		return 0
 	}
