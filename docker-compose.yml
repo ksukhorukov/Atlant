@@ -4,7 +4,7 @@ services:
     image: "mongo:latest"
     hostname: mongo
     container_name: mongo
-    entrypoint: ["/usr/bin/mongod","--bind_ip_all","--replSet","rs0"]
+    entrypoint: ["/usr/bin/mongod","--bind_ip_all"]
   atlant_server_1:
     image: "golang:latest"
     hostname: atlant_server_1
@@ -20,6 +20,7 @@ services:
     volumes:
       - ./server/server:/code/server
       - ./client/client:/code/client
+      - ./ssl:/etc/haproxy/ssl
     entrypoint: ["/code/server","--host=0.0.0.0"]
   haproxy:
     image: "haproxy:latest"

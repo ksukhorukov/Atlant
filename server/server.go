@@ -161,6 +161,10 @@ func search(page int32, per_page int32, column string, order int32, collection m
 
 	cursor_index := getCursorIndex(page, per_page, int32(len(results)))
 
+	if(len(results) < int(per_page)) {
+		per_page = int32(len(results)) - int32(cursor_index)
+	}
+
 	return results[cursor_index:per_page]
 }
 
@@ -194,8 +198,6 @@ func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	err = client.Connect(mng_context)
 
 	errorCheck(err)
-
-	fmt.Printf("MONGO CLIENT TYPE: %T\n", client)
 
 	collection := client.Database(DB_NAME).Collection(DB_COLLECTION_NAME)
 

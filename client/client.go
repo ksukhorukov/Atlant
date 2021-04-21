@@ -35,7 +35,7 @@ func main() {
 
 	c := api.NewApiClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	fetch_request, fetch_err := c.Fetch(ctx, &api.FetchRequest{Url: fetch_url})
