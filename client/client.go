@@ -13,9 +13,11 @@ import (
 )
 
 var server_address string
+var fetch_url string
 var show_help bool
 
 const DEFAULT_SERVER_ADDRESS = "localhost:55555"
+const DEFAULT_FETCH_URL = "http://localhost:3000/products.csv"
 
 func main() {
 	systemParams()
@@ -36,7 +38,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	fetch_request, fetch_err := c.Fetch(ctx, &api.FetchRequest{Url: "http://localhost:3000/sequence.csv"})
+	fetch_request, fetch_err := c.Fetch(ctx, &api.FetchRequest{Url: fetch_url})
 
 	errorCheck(fetch_err)
 
@@ -73,11 +75,12 @@ func errorCheck(err error) {
 
 func systemParams() {
 	flag.StringVar(&server_address, "server", DEFAULT_SERVER_ADDRESS, "Address of our server")
+	flag.StringVar(&fetch_url, "url", DEFAULT_FETCH_URL, "CSV file URL")
 	flag.BoolVar(&show_help, "help", false, "Help center")
 	flag.Parse()
 }
 
 func usage() {
 	fmt.Printf("Usage:\n\n")
-	fmt.Printf("%s --server=localhost:5555\n\n", os.Args[0])
+	fmt.Printf("%s --server=localhost:5555 --url=http://localhost/products.csv\n\n", os.Args[0])
 }
