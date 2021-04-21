@@ -48,7 +48,7 @@ func main() {
 		Column: "price",
 	 	Order: 1, //ascending, -1 means descending
 	 	PageNumber: 1,
-	 	ResultsPerPage: 60,
+	 	ResultsPerPage: 50,
 	 })
 
 	errorCheck(list_err)

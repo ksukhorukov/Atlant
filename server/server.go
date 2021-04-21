@@ -161,10 +161,6 @@ func search(page int32, per_page int32, column string, order int32, collection m
 
 	cursor_index := getCursorIndex(page, per_page, int32(len(results)))
 
-	if(len(results) < int(per_page)) {
-		per_page = int32(len(results)) - int32(cursor_index)
-	}
-
 	return results[cursor_index:per_page]
 }
 
