@@ -153,15 +153,11 @@ func search(page int32, per_page int32, column string, order int32, collection m
 
 	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)	
 
-	log.Printf("Here goes the error\n")
 	errorCheck(err)
-	log.Printf("Error ends\n")
 
 	err = cursor.All(mng_context, &results)
 
-	log.Printf("Here goes the error\n")
 	errorCheck(err)
-	log.Printf("Eror ends\n")
 
 	cursor_index := getCursorIndex(page, per_page, int32(len(results)))
 
