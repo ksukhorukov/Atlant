@@ -1,7 +1,7 @@
 package main
 
 import (
-	 api "github.com/ksukhorukov/atlant/proto"
+	 api "github.com/ksukhorukov/atlant/api"
 
 	"google.golang.org/grpc"
 
