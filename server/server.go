@@ -44,11 +44,13 @@ type Record struct {
 	Product string 
 	Price float64
 	TimesPriceChanged int
-	RequestTime time.Time
+	RequestTime int64
 }
 
 func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchResponse, error) {
-	mng_context, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
 
 	client, collection := initMongo(mng_context)
 
@@ -64,7 +66,7 @@ func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchRes
 
 	fmt.Printf("[+] Starting to parse %s\n", file_path)
 
-	timestamp := time.Now()
+	timestamp := time.Now().Unix()
 
 	count := parseCSV(file_path, collection, mng_context, timestamp)
 
@@ -76,7 +78,9 @@ func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchRes
 }
 
 func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListResponse, error) {
-	mng_context, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
 
 	client, collection := initMongo(mng_context)
 
@@ -98,7 +102,7 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 	data_size := len(results)
 	data := make([]*api.Result, data_size)
 
-	for i := 0; i < data_size - 1; i++ {
+	for i := 0; i < data_size; i++ {
 		data[i] = &results[i]
 	}
 
@@ -129,11 +133,15 @@ func search(page int32, per_page int32, column string, order int32, collection m
 
 	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)	
 
+	log.Printf("Here goes the error\n")
 	errorCheck(err)
+	log.Printf("Error ends\n")
 
 	err = cursor.All(mng_context, &results)
 
+	log.Printf("Here goes the error\n")
 	errorCheck(err)
+	log.Printf("Eror ends\n")
 
 	cursor_index := getCursorIndex(page, per_page, int32(len(results)))
 
@@ -184,7 +192,7 @@ func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	return *client, *collection
 }
 
-func parseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp time.Time) int32 {
+func parseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp int64) int32 {
 	var counter int32
 
 	counter = 0
@@ -222,7 +230,7 @@ func parseCSV(file_path string, collection mongo.Collection, mng_context context
 	return counter
 }
 
-func saveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp time.Time) bool {
+func saveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64) bool {
 		var result Record
 
 		saved := false
@@ -234,8 +242,11 @@ func saveResults(collection mongo.Collection, mng_context context.Context, produ
 			_, err = collection.InsertOne(mng_context, record)
 
 			errorCheck(err)
+
+			saved = true
 		} else { // need to update existing record
 			if(result.Price == price) { // exit if nothing changed
+				fmt.Printf("Prices comparison: %f and %f\n", result.Price, price)
  				return false
  			}
 

@@ -14,7 +14,7 @@ fp = File.open(file_name, 'w')
 fp.print("PRODUCT NAME;PRICE\n")
 
 1000.times do |n|
-	product = "test_product_#{rand(1000) + 1}"
+	product = "test_product_#{rand(1000_000_000) + 1}"
 	price = (rand(1000) + 1) / 100.0
 	fp.print("#{product};#{price}\n")
 end
