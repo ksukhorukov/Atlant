@@ -1,20 +1,31 @@
 package main
 
 import (
+	"os"
+	"fmt"
 	"context"
 	"log"
 	"time"
-
+	"flag"
 	"google.golang.org/grpc"
+
 	api "github.com/ksukhorukov/atlant/api"
 )
 
-const (
-	address     = "localhost:31337"
-)
+var server_address string
+var show_help bool
+
+const DEFAULT_SERVER_ADDRESS = "localhost:55555"
 
 func main() {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	systemParams()
+
+	if(show_help) {
+		usage()
+		os.Exit(1)
+	}
+
+	conn, err := grpc.Dial(server_address, grpc.WithInsecure(), grpc.WithBlock())
 
 	errorCheck(err)
 
@@ -58,4 +69,15 @@ func errorCheck(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func systemParams() {
+	flag.StringVar(&server_address, "server", DEFAULT_SERVER_ADDRESS, "Address of our server")
+	flag.BoolVar(&show_help, "help", false, "Help center")
+	flag.Parse()
+}
+
+func usage() {
+	fmt.Printf("Usage:\n\n")
+	fmt.Printf("%s --server=localhost:5555\n\n", os.Args[0])
 }

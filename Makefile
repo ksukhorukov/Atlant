@@ -1,5 +1,5 @@
 compile:
-	#go get -v
+	go get -v ./...
 	protoc api/*.proto \
 		--go_out=. \
 		--go-grpc_out=. \

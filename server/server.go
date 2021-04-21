@@ -379,7 +379,7 @@ func systemParams() {
 
 func usage() {
 	fmt.Printf("Usage:\n\n")
-	fmt.Printf("%s --host=0.0.0.0 --port=55555 -mongo_address=192.168.0.100 --mongo_port=27017\n\n", os.Args[0])
+	fmt.Printf("%s --host=0.0.0.0 --port=55555 --mongo_address=192.168.0.100 --mongo_port=27017\n\n", os.Args[0])
 
 	fmt.Printf("Default settings:\n\n")
 	fmt.Printf("Host: %s\n", DEFAULT_SERVER_ADDRESS)
