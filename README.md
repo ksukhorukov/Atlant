@@ -23,7 +23,7 @@ Make sure protobuf installed.
 
 ## Usage
 
-``$./server/server --help
+``$./server/server --help``
 
 ``$ ./client/client --help``
 
