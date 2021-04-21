@@ -17,7 +17,7 @@ The last price of each product is saved in DB collection with the timestamp and 
 
 Make sure protobuf installed.
 
-Make sure local instances of MongoDB and HAproxy turned off.
+Make sure that local instances of MongoDB and HAproxy turned off.
 
 ``make compile``
 
