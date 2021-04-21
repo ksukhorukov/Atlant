@@ -27,5 +27,5 @@ services:
     ports:
       - 55555:55555
     volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
 
