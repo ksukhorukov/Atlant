@@ -16,5 +16,6 @@ mongo_mock
 atlant_backup
 tmp/*
 *.csv
+server/server
 # Dependency directories (remove the comment below to include it)
 # vendor/

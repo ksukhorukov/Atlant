@@ -7,4 +7,4 @@ compile:
 		--go-grpc_opt=paths=source_relative \
 		--proto_path=.
 
-	go build
+	go build -o ./server/server ./server/server.go
