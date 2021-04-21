@@ -17,9 +17,13 @@ The last price of each product is saved in DB collection with the timestamp and 
 
 Make sure protobuf installed.
 
+Make sure local instances of MongoDB and HAproxy turned off.
+
 ``make compile``
 
 ``docker-compose up``
+
+HAProxy uses port 5555 that at this stage should be ready for connections.
 
 ## Usage
 
