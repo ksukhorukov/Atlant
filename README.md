@@ -1,6 +1,6 @@
 # Atlant
 
-### Description
+## Description
 
 Golang gRPC server and a client inside Docker containers  under HAProxy.
 MongoDB used for data storage.
@@ -13,7 +13,7 @@ The last price of each product is saved in DB collection with the timestamp and 
  
 - List(paging params, sorting params) - Get the list of products according to filtering criterias.
 
-### Install && Deploy
+## Install && Deploy
 
 Make sure protobuf installed.
 
@@ -21,13 +21,13 @@ Make sure protobuf installed.
 
 ``docker-compose up``
 
-### Usage
+## Usage
 
 ``$./server/server --help```
 ``$ ./client/client --help``
 
 
-### Examples
+## Examples
 
 Bind server to all interfaces and use port 5555,  use custom address for Mongo:
 
