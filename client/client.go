@@ -82,5 +82,5 @@ func systemParams() {
 
 func usage() {
 	fmt.Printf("Usage:\n\n")
-	fmt.Printf("%s --server=localhost:5555 --url=http://localhost/products.csv\n\n", os.Args[0])
+	fmt.Printf("%s --server=localhost:5555 --url=http://localhost:3000/products.csv\n\n", os.Args[0])
 }
