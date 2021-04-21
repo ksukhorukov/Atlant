@@ -111,6 +111,8 @@ func main() {
 	
 	errorCheck(err)
 
+	defer lis.Close()
+
 	s := grpc.NewServer()
 	
 	api.RegisterApiServer(s, &server{})
