@@ -18,15 +18,28 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
 )
 
+var server_address string;
+var server_port int;
+
+var mongo_address string;
+var mongo_port int;
+
+var show_help bool;
+
 const (
-	port = ":31337"
+	DEFAULT_SERVER_ADDRESS = "127.0.0.1"
+	DEFAULT_SERVER_PORT = 55555
 	
+	DEFAULT_MONGO_ADDRESS = "127.0.0.1"
+	DEFAULT_MONGO_PORT = 27017
+
 	ERROR_INCORRECT_STRUCTURE = "Incorrect CSV file structure"
 	ERROR_INCORRECT_HEADERS 	= "Incorrect CSV file headers"
 	ERROR_INCORRECT_FILE_TYPE = "Incorrect file type"
@@ -111,7 +124,14 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 
 
 func main() {
-	lis, err := net.Listen("tcp", port)
+	systemParams()
+
+	if show_help {
+		usage()
+		os.Exit(1)
+	}
+
+	lis, err := net.Listen("tcp", socketAddress())
 	
 	errorCheck(err)
 
@@ -171,7 +191,7 @@ func printResults(results []Record) {
 }
 
 func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI(mongoAddress()))
 	
 	errorCheck(err)
 
@@ -347,4 +367,35 @@ func checkMimeType(mime *mimetype.MIME) error {
 	}
 
 	return nil
+}
+
+func systemParams() {
+	flag.StringVar(&server_address, "host", DEFAULT_SERVER_ADDRESS, "Address of our server")
+	flag.IntVar(&server_port, "port", DEFAULT_SERVER_PORT, "Service port number")
+
+	flag.StringVar(&mongo_address, "mongo_address", DEFAULT_MONGO_ADDRESS, "Address of MongoDB server")
+	flag.IntVar(&mongo_port, "mongo_port", DEFAULT_MONGO_PORT, "MongoDB port number")
+
+	flag.BoolVar(&show_help, "help", false, "Help center")
+
+	flag.Parse()
+}
+
+func usage() {
+	fmt.Printf("Usage:\n\n")
+	fmt.Printf("%s --host=0.0.0.0 --port=55555 -mongo_address=192.168.0.100 --mongo_port=27017\n\n", os.Args[0])
+
+	fmt.Printf("Default settings:\n\n")
+	fmt.Printf("Host: %s\n", DEFAULT_SERVER_ADDRESS)
+	fmt.Printf("Port: %d\n", DEFAULT_SERVER_PORT)
+	fmt.Printf("MongoDB address: %s\n", DEFAULT_MONGO_ADDRESS)
+	fmt.Printf("MongoDB port: %d\n", DEFAULT_MONGO_PORT)
+}
+
+func socketAddress() string {
+	return fmt.Sprintf("%s:%s", server_address, strconv.Itoa(server_port))
+}
+
+func mongoAddress() string {
+	return fmt.Sprintf("mongodb://%s:%s", mongo_address, strconv.Itoa(mongo_port))
 }
