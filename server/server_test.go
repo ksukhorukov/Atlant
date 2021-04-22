@@ -112,3 +112,29 @@ func TestRandomFileNameGeneration(t *testing.T) {
 		t.Errorf("Random file name generator works incorrectly: %s\n", random_file_name)
 	}
 }
+
+func TestDownloadFile(t *testing.T) {
+	url := "https://raw.githubusercontent.com/ksukhorukov/Atlant/master/samples/sample.csv"
+	tmp_file_path := RandomFile("../tmp", 64)
+
+	err := DownloadFile(url, tmp_file_path)
+
+	if(err != nil) {
+		t.Errorf("Cannot download sample file: %v\n", err)
+	}
+
+	DeleteFile(tmp_file_path)
+}
+
+func TestDownloadFileWithWrongMimeType(t *testing.T) {
+	url := "https://github.com/ksukhorukov/Atlant/raw/master/samples/golang.png"
+	tmp_file_path := RandomFile("../tmp", 64)
+
+	err := DownloadFile(url, tmp_file_path)
+
+	if(err == nil) {
+		t.Errorf("Function allows to download files with incorrect mime types\n")
+	}
+
+	DeleteFile(tmp_file_path)	
+}

@@ -313,7 +313,11 @@ func CheckStructure(record []string) {
 func DownloadFile(url string, filepath string) error {
 	resp, err := http.Get(url)
 
-	ErrorCheck(err)
+	//ErrorCheck(err)
+
+	if err != nil {
+		return err
+	}
 
 	defer resp.Body.Close()
 
@@ -323,14 +327,24 @@ func DownloadFile(url string, filepath string) error {
 
 	err = CheckMimeType(mime)
 
-	ErrorCheck(err)
+	//ErrorCheck(err)
+
+	if err != nil {
+		return err
+	}
 
 	_ = os.Mkdir(DOWNLOAD_DIRECTORY, 0777)
 
+	// ErrorCheck(err)
+	
 	out, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0600)
 	defer out.Close()
 
-	ErrorCheck(err)
+	// ErrorCheck(err)
+
+	if err != nil {
+		return err
+	}
 
 	_, err = out.Write(body)
 
