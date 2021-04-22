@@ -5,6 +5,7 @@ import (
 	"testing"
 	"io/ioutil"
 	"fmt"
+	"os"
 )
 
 func TestGetCursorIndex(t *testing.T) {
@@ -69,4 +70,32 @@ func TestCheckMimeTypeWithIncorrectMimeType(t *testing.T) {
     if(err == nil) {
     	t.Errorf("Incorrect mimetype detection: %v", err)
     }
+}
+
+func TestDeleteCorrectFile(t *testing.T) {
+		tmp_file_path := "../samples/file_for_test_purposes.txt"
+    tmpFile, err := os.Create(tmp_file_path)
+
+    if err != nil {
+        t.Errorf("Cannot create file for test purposes\n")
+        return
+    }
+
+   	tmpFile.Close()
+
+   	err = DeleteFile(tmp_file_path)
+
+   	if err != nil {
+   		t.Errorf("Cannot delete tmp file: %v", err)
+   	}
+}
+
+func TestDeleteIncorrectFile(t *testing.T) {
+		tmp_file_path := "../samples/file_for_test_purposes.txt"
+
+   	err := DeleteFile(tmp_file_path)
+
+   	if err == nil {
+   		t.Errorf("Delete file function not working\n")
+   	}
 }
