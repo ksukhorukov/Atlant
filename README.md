@@ -35,7 +35,7 @@ HAProxy binds port 5555 to host and at this stage it should be available for con
 
 Generator is a simple Ruby script that creates CSV files with random content for testing purposes.
 
-``./generator/generator.rb`` 
+``./generator/generator.rb sample_file_name.csv`` 
 
 ## Examples
 
