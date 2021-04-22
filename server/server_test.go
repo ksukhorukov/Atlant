@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gabriel-vasile/mimetype"
 	"testing"
+	"regexp"
 	"io/ioutil"
 	"fmt"
 	"os"
@@ -98,4 +99,16 @@ func TestDeleteIncorrectFile(t *testing.T) {
    	if err == nil {
    		t.Errorf("Delete file function not working\n")
    	}
+}
+
+func TestRandomFileNameGeneration(t *testing.T) {
+	random_file_name := RandomFile("../samples", 64)
+
+	filename_pattern := regexp.MustCompile(`\.\.\/samples\/([0-9a-zA-Z]){64}\.txt$`)
+
+	match := filename_pattern.Match([]byte(random_file_name))
+
+	if(match == false) {
+		t.Errorf("Random file name generator works incorrectly: %s\n", random_file_name)
+	}
 }
