@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/gabriel-vasile/mimetype"
 	"testing"
+	"io/ioutil"
 	"fmt"
 )
 
@@ -35,3 +37,36 @@ func TestSocketAddress(t *testing.T) {
 	}
 }
 
+func TestCheckMimeTypeWithCorrectMimeType(t *testing.T) {
+	  data, err := ioutil.ReadFile("../samples/sample.csv")
+
+    if err != nil {
+        t.Errorf("Error reading sample file: %v\n", err)
+        return
+    }
+
+    mime := mimetype.Detect(data)
+
+    err = CheckMimeType(mime)
+
+    if(err != nil) {
+    	t.Errorf("Incorrect mimetype detection: %v", err)
+    }
+}
+
+func TestCheckMimeTypeWithIncorrectMimeType(t *testing.T) {
+	  data, err := ioutil.ReadFile("../samples/golang.png")
+
+    if err != nil {
+        t.Errorf("Error reading sample file: %v\n", err)
+        return
+    }
+
+    mime := mimetype.Detect(data)
+
+    err = CheckMimeType(mime)
+
+    if(err == nil) {
+    	t.Errorf("Incorrect mimetype detection: %v", err)
+    }
+}
