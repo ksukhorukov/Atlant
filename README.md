@@ -21,7 +21,8 @@ Make sure that local instances of MongoDB and HAproxy turned off.
 
 ``make compile``
 
-``docker-compose up``
+``docker-compose up -d``
+``make test``
 
 HAProxy binds port 5555 to host and at this stage it should be available for connections.
 
