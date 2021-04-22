@@ -1,44 +1,43 @@
 package main
 
 import (
-	 api "github.com/ksukhorukov/atlant/api"
+	api "github.com/ksukhorukov/atlant/api"
 
 	"google.golang.org/grpc"
 
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"context"
 	"time"
 
-	"github.com/gabriel-vasile/mimetype"
 	"encoding/csv"
-	"io/ioutil"
-	"math/rand"
-	"net/http"
-	"strconv"
 	"flag"
 	"fmt"
+	"github.com/gabriel-vasile/mimetype"
+	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
+	"net/http"
 	"os"
+	"strconv"
 )
-
 
 const (
 	DEFAULT_SERVER_ADDRESS = "127.0.0.1"
-	DEFAULT_SERVER_PORT = 55555
-	
+	DEFAULT_SERVER_PORT    = 55555
+
 	DEFAULT_MONGO_ADDRESS = "mongo" //"127.0.0.1"
-	DEFAULT_MONGO_PORT = 27017
+	DEFAULT_MONGO_PORT    = 27017
 
 	ERROR_INCORRECT_STRUCTURE = "Incorrect CSV file structure"
-	ERROR_INCORRECT_HEADERS 	= "Incorrect CSV file headers"
+	ERROR_INCORRECT_HEADERS   = "Incorrect CSV file headers"
 	ERROR_INCORRECT_FILE_TYPE = "Incorrect file type"
-	DOWNLOAD_DIRECTORY = "./tmp"
+	DOWNLOAD_DIRECTORY        = "./tmp"
 
-	DB_NAME = "atlant"
+	DB_NAME            = "atlant"
 	DB_COLLECTION_NAME = "products"
 )
 
@@ -47,10 +46,10 @@ type server struct {
 }
 
 type Record struct {
-	Product string 
-	Price float64
+	Product           string
+	Price             float64
 	TimesPriceChanged int64
-	RequestTime int64
+	RequestTime       int64
 }
 
 type saver func(mongo.Collection, context.Context, string, float64, int64) bool
@@ -62,7 +61,6 @@ var mongo_address = DEFAULT_MONGO_ADDRESS
 var mongo_port = DEFAULT_MONGO_PORT
 
 var show_help = false
-
 
 func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchResponse, error) {
 	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -114,9 +112,8 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 	page := in.GetPageNumber()
 	results_per_page := in.GetResultsPerPage()
 
-	log.Printf("Received. Column: %v, Order: %v, PageNumber: %v, ResultsPerPage: %v", 
+	log.Printf("Received. Column: %v, Order: %v, PageNumber: %v, ResultsPerPage: %v",
 		column, order, page, results_per_page)
-
 
 	var results []api.Result
 
@@ -132,7 +129,6 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 	return &api.ListResponse{Results: data}, nil
 }
 
-
 func main() {
 	SystemParams()
 
@@ -142,15 +138,15 @@ func main() {
 	}
 
 	lis, err := net.Listen("tcp", SocketAddress())
-	
+
 	ErrorCheck(err)
 
 	defer lis.Close()
 
 	s := grpc.NewServer()
-	
+
 	api.RegisterApiServer(s, &server{})
-	
+
 	err = s.Serve(lis)
 
 	ErrorCheck(err)
@@ -158,10 +154,10 @@ func main() {
 
 func Search(page int64, per_page int64, column string, order int32, collection mongo.Collection, mng_context context.Context) []api.Result {
 	var results []api.Result
-	
+
 	opts := options.Find().SetSort(bson.D{{column, order}})
 
-	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)	
+	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)
 
 	ErrorCheck(err)
 
@@ -194,34 +190,33 @@ func GetCursorRange(page int64, per_page int64, length int64) (int64, int64) {
 	if page > 1 {
 		page = page - 1
 
-		if per_page * page >= length {
+		if per_page*page >= length {
 			start = 0
 		} else {
-			start = page * per_page 
+			start = page * per_page
 		}
 	} else if page < 0 {
-		if (page * -1) * per_page < length {
-			start = length + (page * per_page)	
+		if (page*-1)*per_page < length {
+			start = length + (page * per_page)
 		}
 	}
 
-	if start + per_page > length {
+	if start+per_page > length {
 		return start, length
 	}
 
 	return start, start + per_page
 }
 
-
 func PrintResults(results []Record) {
 	for _, result := range results {
 		fmt.Printf("%s %f %s %d\n", result.Product, result.Price, time.Unix(result.RequestTime, 0), result.TimesPriceChanged)
-	}	
+	}
 }
 
-func InitMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
+func InitMongo(mng_context context.Context) (mongo.Client, mongo.Collection) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoAddress()))
-	
+
 	ErrorCheck(err)
 
 	err = client.Connect(mng_context)
@@ -237,13 +232,13 @@ func InitMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	return *client, *collection
 }
 
-func ParseCSV(file_path string, saver saver, collection mongo.Collection, mng_context context.Context, timestamp int64)(int64, error) {
+func ParseCSV(file_path string, saver saver, collection mongo.Collection, mng_context context.Context, timestamp int64) (int64, error) {
 	var counter int64
 
 	counter = 0
 
 	file, err := os.Open(file_path)
-	
+
 	if err != nil {
 		return 0, err
 	}
@@ -264,7 +259,7 @@ func ParseCSV(file_path string, saver saver, collection mongo.Collection, mng_co
 	}
 
 	records, err := reader.ReadAll()
-	
+
 	if err != nil {
 		return 0, err
 	}
@@ -283,7 +278,7 @@ func ParseCSV(file_path string, saver saver, collection mongo.Collection, mng_co
 			return counter, err
 		}
 
-		if(saver(collection, mng_context, product, price, timestamp)) {
+		if saver(collection, mng_context, product, price, timestamp) {
 			counter += 1
 		}
 	}
@@ -291,49 +286,49 @@ func ParseCSV(file_path string, saver saver, collection mongo.Collection, mng_co
 	return counter, nil
 }
 
-func SaveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64)bool {
-		var result Record
+func SaveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64) bool {
+	var result Record
 
-		saved := false
-		
-		err := collection.FindOne(mng_context, bson.D{{"product", product}}).Decode(&result)
+	saved := false
 
-		if err != nil { // nothing found
-			record := Record{product, price, 0, timestamp}
-			_, err = collection.InsertOne(mng_context, record)
+	err := collection.FindOne(mng_context, bson.D{{"product", product}}).Decode(&result)
 
-			ErrorCheck(err)
+	if err != nil { // nothing found
+		record := Record{product, price, 0, timestamp}
+		_, err = collection.InsertOne(mng_context, record)
 
-			saved = true
-		} else { // need to update existing record
-			if(result.Price == price) { // exit if nothing changed
- 				return false
- 			}
+		ErrorCheck(err)
 
-			filter := bson.D{{"product", product}}
- 
- 			update := bson.D{
-    		{"$set", bson.D{
-    			{"price", price},
-	        {"timespricechanged", result.TimesPriceChanged + 1},
-	        {"requesttime", timestamp},
-  	  	}},
-  	  }
+		saved = true
+	} else { // need to update existing record
+		if result.Price == price { // exit if nothing changed
+			return false
+		}
 
-  	  _, err = collection.UpdateOne(mng_context, filter, update)
+		filter := bson.D{{"product", product}}
 
-  	  ErrorCheck(err)
+		update := bson.D{
+			{"$set", bson.D{
+				{"price", price},
+				{"timespricechanged", result.TimesPriceChanged + 1},
+				{"requesttime", timestamp},
+			}},
+		}
 
-  	  saved = true
-  	}
+		_, err = collection.UpdateOne(mng_context, filter, update)
 
-  	return saved
+		ErrorCheck(err)
+
+		saved = true
+	}
+
+	return saved
 }
 
 func ConvertStringToFloat(str string) (float64, error) {
-	  fnumber, err := strconv.ParseFloat(str, 64)
+	fnumber, err := strconv.ParseFloat(str, 64)
 
-	  return fnumber, err
+	return fnumber, err
 }
 
 func ErrorCheck(err error) {

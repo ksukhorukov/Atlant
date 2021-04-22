@@ -1,13 +1,13 @@
 package main
 
 import (
-	"os"
-	"fmt"
 	"context"
-	"log"
-	"time"
 	"flag"
+	"fmt"
 	"google.golang.org/grpc"
+	"log"
+	"os"
+	"time"
 
 	api "github.com/ksukhorukov/atlant/api"
 )
@@ -22,7 +22,7 @@ const DEFAULT_FETCH_URL = "http://localhost:3000/products.csv"
 func main() {
 	systemParams()
 
-	if(show_help) {
+	if show_help {
 		usage()
 		os.Exit(1)
 	}
@@ -45,27 +45,26 @@ func main() {
 	log.Printf("Imported: %d", fetch_request.GetCount())
 
 	list_request, list_err := c.List(ctx, &api.ListRequest{
-		Column: "price",
-	 	Order: 1, //ascending, -1 means descending
-	 	PageNumber: 1,
-	 	ResultsPerPage: 50,
-	 })
+		Column:         "price",
+		Order:          1, //ascending, -1 means descending
+		PageNumber:     1,
+		ResultsPerPage: 50,
+	})
 
 	errorCheck(list_err)
 
 	results := list_request.GetResults()
-	
+
 	for i := 0; i < len(results); i++ {
 		record := results[i]
 
-		log.Printf("Product: %s, Price: %f, Times price changed: %d, Request time: %v\n", 
-			record.GetProduct(), 
-			record.GetPrice(), 
-			record.GetTimespricechanged(), 
+		log.Printf("Product: %s, Price: %f, Times price changed: %d, Request time: %v\n",
+			record.GetProduct(),
+			record.GetPrice(),
+			record.GetTimespricechanged(),
 			time.Unix(record.GetRequesttime(), 0))
 	}
 }
-
 
 func errorCheck(err error) {
 	if err != nil {
