@@ -25,18 +25,17 @@ Make sure that local instances of MongoDB and HAproxy turned off.
 
 HAProxy binds port 5555 to host and at this stage it should be available for connections.
 
-## Helpers
-
-Generator is a simple Ruby script that creates CSV files with random content for testing purposes.
-
-``./generator/generator.rb`` 
-
 ## Usage
 
 ``$./server/server --help``
 
 ``$ ./client/client --help``
 
+## Helpers
+
+Generator is a simple Ruby script that creates CSV files with random content for testing purposes.
+
+``./generator/generator.rb`` 
 
 ## Examples
 
