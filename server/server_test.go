@@ -3,8 +3,12 @@ package main
 import (
 	 api "github.com/ksukhorukov/atlant/api"
 
+	"github.com/stretchr/testify/require"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"google.golang.org/grpc"
 
 	"context"
 	"time"
@@ -470,3 +474,72 @@ func deleteTmpData() {
 		}
 	}
 }
+
+func TestFetchRequestResponse(t *testing.T) {
+	conn, err := grpc.Dial(SocketAddress(), grpc.WithInsecure(), grpc.WithBlock())
+
+	require.NoError(t, err)
+
+	defer conn.Close()
+
+	c := api.NewApiClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	fetch_url := "https://raw.githubusercontent.com/ksukhorukov/Atlant/master/samples/small_csv_sample.csv"
+	csv_record_length := int64(5)
+
+	fetch_request, fetch_err := c.Fetch(ctx, &api.FetchRequest{Url: fetch_url})
+
+	defer deleteTmpData()
+
+	require.NoError(t, fetch_err)
+
+	require.Equal(t, csv_record_length, fetch_request.GetCount())
+}
+
+func TestListRequestResponse(t *testing.T) {
+	conn, err := grpc.Dial(SocketAddress(), grpc.WithInsecure(), grpc.WithBlock())
+
+	require.NoError(t, err)
+
+	defer conn.Close()
+
+	c := api.NewApiClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	fetch_url := "https://raw.githubusercontent.com/ksukhorukov/Atlant/master/samples/small_csv_sample.csv"
+
+	_, fetch_err := c.Fetch(ctx, &api.FetchRequest{Url: fetch_url})
+
+	require.NoError(t, fetch_err)
+
+	defer deleteTmpData()
+
+	products_sorted_by_name := [5]string{
+		"test_product_634954705", 
+		"test_product_615830659",
+		"test_product_434077606", 
+		"test_product_410073300", 
+		"test_product_202020302",
+	}
+
+	list_request, list_err := c.List(ctx, &api.ListRequest{
+		Column: "product",
+	 	Order: -1, //ascending, -1 means descending
+	 	PageNumber: 1,
+	 	ResultsPerPage: 10,
+	 })
+
+	require.NoError(t, list_err)
+
+	results := list_request.GetResults()
+	
+	for i := 0; i < len(results); i++ {
+		require.Equal(t, results[i].GetProduct(), products_sorted_by_name[i])
+	}
+}
+

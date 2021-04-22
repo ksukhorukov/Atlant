@@ -234,8 +234,6 @@ func InitMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 
 	ErrorCheck(err)
 
-	fmt.Printf("[+] Connected to MongoDB\n")
-
 	return *client, *collection
 }
 
