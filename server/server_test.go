@@ -15,10 +15,6 @@ import (
 	"os"
 )
 
-func TestGetCursorIndex(t *testing.T) {
-	fmt.Println("GetCursorIndex test")
-}
-
 func TestMongoAddress(t *testing.T) {
 	mongo_url := fmt.Sprintf("mongodb://%s:%d", mongo_address, mongo_port)
 	
@@ -316,3 +312,79 @@ func TestParseCSVProduceErrorWhenCSVFilesHasIncorrectValues(t *testing.T) {
 		t.Errorf("Parser successfully parsed CSV with invalid values: %s\n", file_path)
 	}
 }
+
+func TestGetCursorIndex(t *testing.T) {
+	var page int64
+	var per_page int64 
+	var length int64 
+	var expected_start int64 
+	var expected_end int64
+	var start int64 
+	var end int64
+
+	page = 1
+	per_page = 10
+	length = 20
+
+	expected_start, expected_end = 0, per_page
+
+	start, end = GetCursorRange(page, per_page, length)
+
+	if start != expected_start || end != expected_end {
+		t.Errorf("Invalid cursors. Expecting (%d, %d) got (%d, %d)\n", expected_start, expected_end, start, end)
+	}
+
+	page = -1
+	per_page = 10
+	length = 20
+
+	expected_start = 10
+	expected_end = 20
+
+	start, end = GetCursorRange(page, per_page, length)
+
+	if start != expected_start || end != expected_end {
+		t.Errorf("Invalid cursors. Expecting (%d, %d) got (%d, %d)\n", expected_start, expected_end, start, end)
+	}
+
+	page = 2
+	per_page = 10
+	length = 20
+
+	expected_start = 10
+	expected_end = 20
+
+	start, end = GetCursorRange(page, per_page, length)	
+
+	if start != expected_start || end != expected_end {
+		t.Errorf("Invalid cursors. Expecting (%d, %d) got (%d, %d)\n", expected_start, expected_end, start, end)
+	}
+
+	page = 4
+	per_page = 10
+	length = 20
+
+	expected_start = 0
+	expected_end = per_page
+
+	start, end = GetCursorRange(page, per_page, length)	
+
+	if start != expected_start || end != expected_end {
+		t.Errorf("Invalid cursors. Expecting (%d, %d) got (%d, %d)\n", expected_start, expected_end, start, end)
+	}
+
+
+	page = 1
+	per_page = 100
+	length = 20
+
+	expected_start = 0
+	expected_end = length
+
+	start, end = GetCursorRange(page, per_page, length)	
+
+	if start != expected_start || end != expected_end {
+		t.Errorf("Invalid cursors. Expecting (%d, %d) got (%d, %d)\n", expected_start, expected_end, start, end)
+	}
+}
+

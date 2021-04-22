@@ -169,26 +169,49 @@ func Search(page int64, per_page int64, column string, order int32, collection m
 
 	ErrorCheck(err)
 
-	cursor_index := GetCursorIndex(page, per_page, int64(len(results)))
+	results_size := int64(len(results))
 
-	return results[cursor_index:per_page]
+	start, end := GetCursorRange(page, per_page, results_size)
+
+	return results[start:end]
 }
 
-func GetCursorIndex(page int64, per_page int64, length int64) int64 {
-	if(page == 1) {
-		return 0
+func GetCursorRange(page int64, per_page int64, length int64) (int64, int64) {
+	var start int64
+
+	if length < per_page {
+		return 0, length
 	}
 
-	if(page > 1) {
-		return (page * per_page) - 1
+	if page == 1 || page == 0 {
+		start = 0
 	}
 
-	if(page < 0 && ((page * -1) * per_page <= length)) {
-		return (length + (page * per_page)) - 1
+	if length <= 0 {
+		return 0, 0
 	}
 
-	return 0
+	if page > 1 {
+		page = page - 1
+
+		if per_page * page >= length {
+			start = 0
+		} else {
+			start = page * per_page 
+		}
+	} else if page < 0 {
+		if (page * -1) * per_page < length {
+			start = length + (page * per_page)	
+		}
+	}
+
+	if start + per_page > length {
+		return start, length
+	}
+
+	return start, start + per_page
 }
+
 
 func PrintResults(results []Record) {
 	for _, result := range results {
