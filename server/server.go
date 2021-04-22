@@ -56,7 +56,7 @@ type server struct {
 type Record struct {
 	Product string 
 	Price float64
-	TimesPriceChanged int
+	TimesPriceChanged int64
 	RequestTime int64
 }
 
@@ -110,7 +110,7 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 
 	var results []api.Result
 
-	results = Search(page, results_per_page, column, order, collection, mng_context)
+	results = Search(int64(page), int64(results_per_page), column, int32(order), collection, mng_context)
 
 	data_size := len(results)
 	data := make([]*api.Result, data_size)
@@ -146,7 +146,7 @@ func main() {
 	ErrorCheck(err)
 }
 
-func Search(page int32, per_page int32, column string, order int32, collection mongo.Collection, mng_context context.Context) []api.Result {
+func Search(page int64, per_page int64, column string, order int32, collection mongo.Collection, mng_context context.Context) []api.Result {
 	var results []api.Result
 	
 	opts := options.Find().SetSort(bson.D{{column, order}})
@@ -159,12 +159,12 @@ func Search(page int32, per_page int32, column string, order int32, collection m
 
 	ErrorCheck(err)
 
-	cursor_index := GetCursorIndex(page, per_page, int32(len(results)))
+	cursor_index := GetCursorIndex(page, per_page, int64(len(results)))
 
 	return results[cursor_index:per_page]
 }
 
-func GetCursorIndex(page int32, per_page int32, length int32) int32 {
+func GetCursorIndex(page int64, per_page int64, length int64) int64 {
 	if(page == 1) {
 		return 0
 	}
@@ -206,8 +206,8 @@ func InitMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	return *client, *collection
 }
 
-func ParseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp int64) int32 {
-	var counter int32
+func ParseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp int64) int64 {
+	var counter int64
 
 	counter = 0
 
