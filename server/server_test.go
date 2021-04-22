@@ -21,3 +21,17 @@ func TestMongoAddress(t *testing.T) {
 		t.Errorf("%s != %s\n", func_result, mongo_url)
 	}
 }
+
+func TestSocketAddress(t *testing.T) {
+	server_address = "127.0.0.1"
+	server_port = 55555
+
+	server_socket := fmt.Sprintf("%s:%d", server_address, server_port)
+
+	func_result := SocketAddress()
+
+	if(server_socket != func_result) {
+		t.Errorf("%s != %s\n", func_result, server_socket)	
+	}
+}
+
