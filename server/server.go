@@ -65,27 +65,27 @@ func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchRes
 
 	defer cancel()
 
-	client, collection := initMongo(mng_context)
+	client, collection := InitMongo(mng_context)
 
 	defer client.Disconnect(mng_context)
 
 	log.Printf("Received: %v", in.GetUrl())
 
-	file_path := randomFile(DOWNLOAD_DIRECTORY, 64)
+	file_path := RandomFile(DOWNLOAD_DIRECTORY, 64)
 
-	err := downloadFile(in.GetUrl(), file_path)
+	err := DownloadFile(in.GetUrl(), file_path)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	fmt.Printf("[+] Starting to parse %s\n", file_path)
 
 	timestamp := time.Now().Unix()
 
-	count := parseCSV(file_path, collection, mng_context, timestamp)
+	count := ParseCSV(file_path, collection, mng_context, timestamp)
 
-	err = deleteFile(file_path)
+	err = DeleteFile(file_path)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	return &api.FetchResponse{Count: count}, nil
 }
@@ -95,7 +95,7 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 
 	defer cancel()
 
-	client, collection := initMongo(mng_context)
+	client, collection := InitMongo(mng_context)
 
 	defer client.Disconnect(mng_context)
 
@@ -110,7 +110,7 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 
 	var results []api.Result
 
-	results = search(page, results_per_page, column, order, collection, mng_context)
+	results = Search(page, results_per_page, column, order, collection, mng_context)
 
 	data_size := len(results)
 	data := make([]*api.Result, data_size)
@@ -124,16 +124,16 @@ func (s *server) List(ctx context.Context, in *api.ListRequest) (*api.ListRespon
 
 
 func main() {
-	systemParams()
+	SystemParams()
 
 	if show_help {
-		usage()
+		Usage()
 		os.Exit(1)
 	}
 
-	lis, err := net.Listen("tcp", socketAddress())
+	lis, err := net.Listen("tcp", SocketAddress())
 	
-	errorCheck(err)
+	ErrorCheck(err)
 
 	defer lis.Close()
 
@@ -143,28 +143,28 @@ func main() {
 	
 	err = s.Serve(lis)
 
-	errorCheck(err)
+	ErrorCheck(err)
 }
 
-func search(page int32, per_page int32, column string, order int32, collection mongo.Collection, mng_context context.Context) []api.Result {
+func Search(page int32, per_page int32, column string, order int32, collection mongo.Collection, mng_context context.Context) []api.Result {
 	var results []api.Result
 	
 	opts := options.Find().SetSort(bson.D{{column, order}})
 
 	cursor, err := collection.Find(mng_context, bson.D{{}}, opts)	
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	err = cursor.All(mng_context, &results)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
-	cursor_index := getCursorIndex(page, per_page, int32(len(results)))
+	cursor_index := GetCursorIndex(page, per_page, int32(len(results)))
 
 	return results[cursor_index:per_page]
 }
 
-func getCursorIndex(page int32, per_page int32, length int32) int32 {
+func GetCursorIndex(page int32, per_page int32, length int32) int32 {
 	if(page == 1) {
 		return 0
 	}
@@ -180,63 +180,63 @@ func getCursorIndex(page int32, per_page int32, length int32) int32 {
 	return 0
 }
 
-func printResults(results []Record) {
+func PrintResults(results []Record) {
 	for _, result := range results {
-		fmt.Printf("%s %f %s %d\n", result.Product, result.Price, result.RequestTime, result.TimesPriceChanged)
+		fmt.Printf("%s %f %s %d\n", result.Product, result.Price, time.Unix(result.RequestTime, 0), result.TimesPriceChanged)
 	}	
 }
 
-func initMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoAddress()))
+func InitMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
+	client, err := mongo.NewClient(options.Client().ApplyURI(MongoAddress()))
 	
-	errorCheck(err)
+	ErrorCheck(err)
 
 	err = client.Connect(mng_context)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	collection := client.Database(DB_NAME).Collection(DB_COLLECTION_NAME)
 
 	err = client.Ping(mng_context, nil)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	fmt.Printf("[+] Connected to MongoDB\n")
 
 	return *client, *collection
 }
 
-func parseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp int64) int32 {
+func ParseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp int64) int32 {
 	var counter int32
 
 	counter = 0
 
 	file, err := os.Open(file_path)
-	errorCheck(err)
+	ErrorCheck(err)
 
 	reader := csv.NewReader(file)
 	reader.Comma = ';'
 
 	headers, err := reader.Read()
-	errorCheck(err)
-	checkHeaders(headers)
+	ErrorCheck(err)
+	CheckHeaders(headers)
 
 	fmt.Printf("Headers: %s, %s\n", headers[0], headers[1])
 
 	records, err := reader.ReadAll()
-	errorCheck(err)
+	ErrorCheck(err)
 
 	for _, record := range records {
-		checkStructure(record)
+		CheckStructure(record)
 
 		product := record[0]
-		price, err := convertStringToFloat(record[1])
+		price, err := ConvertStringToFloat(record[1])
 
-		errorCheck(err)
+		ErrorCheck(err)
 
 		fmt.Printf("Product: %s, Price: %f\n", product, price)
 
-		if(saveResults(collection, mng_context, product, price, timestamp)) {
+		if(SaveResults(collection, mng_context, product, price, timestamp)) {
 			counter += 1
 		}
 	}
@@ -244,7 +244,7 @@ func parseCSV(file_path string, collection mongo.Collection, mng_context context
 	return counter
 }
 
-func saveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64) bool {
+func SaveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64) bool {
 		var result Record
 
 		saved := false
@@ -255,7 +255,7 @@ func saveResults(collection mongo.Collection, mng_context context.Context, produ
 			record := Record{product, price, 0, timestamp}
 			_, err = collection.InsertOne(mng_context, record)
 
-			errorCheck(err)
+			ErrorCheck(err)
 
 			saved = true
 		} else { // need to update existing record
@@ -276,7 +276,7 @@ func saveResults(collection mongo.Collection, mng_context context.Context, produ
 
   	  _, err = collection.UpdateOne(mng_context, filter, update)
 
-  	  errorCheck(err)
+  	  ErrorCheck(err)
 
   	  saved = true
   	}
@@ -286,34 +286,34 @@ func saveResults(collection mongo.Collection, mng_context context.Context, produ
   	return saved
 }
 
-func convertStringToFloat(str string) (float64, error) {
+func ConvertStringToFloat(str string) (float64, error) {
 	  fnumber, err := strconv.ParseFloat(str, 64)
 
 	  return fnumber, err
 }
 
-func errorCheck(err error) {
+func ErrorCheck(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func checkHeaders(headers []string) {
+func CheckHeaders(headers []string) {
 	if headers[0] != "PRODUCT NAME" || headers[1] != "PRICE" {
 		log.Fatal(ERROR_INCORRECT_HEADERS)
 	}
 }
 
-func checkStructure(record []string) {
+func CheckStructure(record []string) {
 	if len(record) != 2 {
 		log.Fatal(ERROR_INCORRECT_STRUCTURE)
 	}
 }
 
-func downloadFile(url string, filepath string) error {
+func DownloadFile(url string, filepath string) error {
 	resp, err := http.Get(url)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	defer resp.Body.Close()
 
@@ -321,23 +321,23 @@ func downloadFile(url string, filepath string) error {
 
 	mime := mimetype.Detect(body)
 
-	err = checkMimeType(mime)
+	err = CheckMimeType(mime)
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	_ = os.Mkdir(DOWNLOAD_DIRECTORY, 0777)
 
 	out, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0600)
 	defer out.Close()
 
-	errorCheck(err)
+	ErrorCheck(err)
 
 	_, err = out.Write(body)
 
 	return err
 }
 
-func randomFile(dir string, n int) string {
+func RandomFile(dir string, n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 	s := make([]rune, n)
@@ -349,13 +349,13 @@ func randomFile(dir string, n int) string {
 	return fmt.Sprintf("%s/%s.txt", dir, string(s))
 }
 
-func deleteFile(file_path string) error {
+func DeleteFile(file_path string) error {
 	err := os.Remove(file_path)
 
 	return err
 }
 
-func checkMimeType(mime *mimetype.MIME) error {
+func CheckMimeType(mime *mimetype.MIME) error {
 	if mime.Is("text/plain") == false {
 		return fmt.Errorf("%s", ERROR_INCORRECT_FILE_TYPE)
 	}
@@ -363,7 +363,7 @@ func checkMimeType(mime *mimetype.MIME) error {
 	return nil
 }
 
-func systemParams() {
+func SystemParams() {
 	flag.StringVar(&server_address, "host", DEFAULT_SERVER_ADDRESS, "Address of our server")
 	flag.IntVar(&server_port, "port", DEFAULT_SERVER_PORT, "Service port number")
 
@@ -375,7 +375,7 @@ func systemParams() {
 	flag.Parse()
 }
 
-func usage() {
+func Usage() {
 	fmt.Printf("Usage:\n\n")
 	fmt.Printf("%s --host=0.0.0.0 --port=55555 --mongo_address=192.168.0.100 --mongo_port=27017\n\n", os.Args[0])
 
@@ -386,10 +386,10 @@ func usage() {
 	fmt.Printf("MongoDB port: %d\n", DEFAULT_MONGO_PORT)
 }
 
-func socketAddress() string {
+func SocketAddress() string {
 	return fmt.Sprintf("%s:%s", server_address, strconv.Itoa(server_port))
 }
 
-func mongoAddress() string {
+func MongoAddress() string {
 	return fmt.Sprintf("mongodb://%s:%s", mongo_address, strconv.Itoa(mongo_port))
 }
