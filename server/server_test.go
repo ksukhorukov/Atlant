@@ -1,6 +1,8 @@
 package main
 
 import (
+	 api "github.com/ksukhorukov/atlant/api"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -388,3 +390,83 @@ func TestGetCursorIndex(t *testing.T) {
 	}
 }
 
+func TestSearch(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	saver := SaveResults
+
+	defer deleteTmpData()
+
+	file_path := "../samples/small_csv_sample.csv"
+
+	_, err := ParseCSV(file_path, saver, collection, mng_context, time.Now().Unix())
+
+	if err != nil {
+		t.Errorf("Cannot parse sample CSV file: %v\n", err)
+	}
+
+	var results []api.Result
+
+	//sort by price in ascending order
+	results = Search(int64(1), int64(10), "price", int32(1), collection, mng_context)
+
+	products_sorted_by_price := [5]string{"test_product_410073300", 
+		"test_product_434077606", 
+		"test_product_202020302", 
+		"test_product_615830659",
+		"test_product_634954705",
+	}
+
+	for i := 0; i < len(results); i++ {
+		if results[i].GetProduct() != products_sorted_by_price[i] {
+			t.Errorf("Order by price is not working\n")
+		}
+	}
+
+	//sort by product name in descending order
+	results = Search(int64(1), int64(10), "product", int32(-1), collection, mng_context)
+
+	products_sorted_by_name := [5]string{"test_product_634954705", 
+		"test_product_615830659",
+		"test_product_434077606", 
+		"test_product_410073300", 
+		"test_product_202020302"}
+
+
+	for i := 0; i < len(results); i++ {
+		if results[i].GetProduct() != products_sorted_by_name[i] {
+			t.Errorf("Order by price is not working\n")
+		}
+	}
+
+}
+
+func deleteTmpData() {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	products := [5]string{"test_product_634954705", "test_product_410073300", "test_product_434077606", "test_product_615830659", "test_product_202020302"}
+
+	for _, product := range products {
+		_, err := collection.DeleteOne(mng_context, bson.M{"product": product})
+
+		if err != nil {
+			fmt.Printf("Cannot delete product %s from MongoDB\n", product)
+		}
+	}
+}
