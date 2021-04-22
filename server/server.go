@@ -53,6 +53,8 @@ type Record struct {
 	RequestTime int64
 }
 
+type saver func(mongo.Collection, context.Context, string, float64, int64) bool
+
 var server_address = DEFAULT_SERVER_ADDRESS
 var server_port = DEFAULT_SERVER_PORT
 
@@ -60,6 +62,7 @@ var mongo_address = DEFAULT_MONGO_ADDRESS
 var mongo_port = DEFAULT_MONGO_PORT
 
 var show_help = false
+
 
 func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchResponse, error) {
 	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -82,7 +85,13 @@ func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchRes
 
 	timestamp := time.Now().Unix()
 
-	count := ParseCSV(file_path, collection, mng_context, timestamp)
+	saver := SaveResults
+
+	var count int64
+
+	count, err = ParseCSV(file_path, saver, collection, mng_context, timestamp)
+
+	ErrorCheck(err)
 
 	err = DeleteFile(file_path)
 
@@ -207,45 +216,61 @@ func InitMongo(mng_context context.Context)(mongo.Client, mongo.Collection)  {
 	return *client, *collection
 }
 
-func ParseCSV(file_path string, collection mongo.Collection, mng_context context.Context, timestamp int64) int64 {
+func ParseCSV(file_path string, saver saver, collection mongo.Collection, mng_context context.Context, timestamp int64)(int64, error) {
 	var counter int64
 
 	counter = 0
 
 	file, err := os.Open(file_path)
-	ErrorCheck(err)
+	
+	if err != nil {
+		return 0, err
+	}
 
 	reader := csv.NewReader(file)
 	reader.Comma = ';'
 
 	headers, err := reader.Read()
-	ErrorCheck(err)
-	CheckHeaders(headers)
 
-	fmt.Printf("Headers: %s, %s\n", headers[0], headers[1])
+	if err != nil {
+		return 0, err
+	}
+
+	err = CheckHeaders(headers)
+
+	if err != nil {
+		return 0, err
+	}
 
 	records, err := reader.ReadAll()
-	ErrorCheck(err)
+	
+	if err != nil {
+		return 0, err
+	}
 
 	for _, record := range records {
-		CheckStructure(record)
+		err := CheckStructure(record)
+
+		if err != nil {
+			return counter, err
+		}
 
 		product := record[0]
 		price, err := ConvertStringToFloat(record[1])
 
-		ErrorCheck(err)
+		if err != nil {
+			return counter, err
+		}
 
-		fmt.Printf("Product: %s, Price: %f\n", product, price)
-
-		if(SaveResults(collection, mng_context, product, price, timestamp)) {
+		if(saver(collection, mng_context, product, price, timestamp)) {
 			counter += 1
 		}
 	}
 
-	return counter
+	return counter, nil
 }
 
-func SaveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64) bool {
+func SaveResults(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64)bool {
 		var result Record
 
 		saved := false
@@ -296,16 +321,20 @@ func ErrorCheck(err error) {
 	}
 }
 
-func CheckHeaders(headers []string) {
+func CheckHeaders(headers []string) error {
 	if headers[0] != "PRODUCT NAME" || headers[1] != "PRICE" {
-		log.Fatal(ERROR_INCORRECT_HEADERS)
+		return fmt.Errorf("%s\n", ERROR_INCORRECT_HEADERS)
 	}
+
+	return nil
 }
 
-func CheckStructure(record []string) {
+func CheckStructure(record []string) error {
 	if len(record) != 2 {
-		log.Fatal(ERROR_INCORRECT_STRUCTURE)
+		return fmt.Errorf("%s\n", ERROR_INCORRECT_STRUCTURE)
 	}
+
+	return nil
 }
 
 func DownloadFile(url string, filepath string) error {

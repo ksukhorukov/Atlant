@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"context"
@@ -195,5 +196,123 @@ func TestDontSaveProductsWithTheSamePrice(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Cannot delete record from MongoDB\n")
+	}
+}
+
+func SaveResultsStub(collection mongo.Collection, mng_context context.Context, product string, price float64, timestamp int64) bool {
+	return true
+}
+
+func TestParseCSV(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	saver := SaveResultsStub
+
+	file_path := "../samples/sample.csv"
+
+	count, err := ParseCSV(file_path, saver, collection, mng_context, time.Now().Unix())
+
+	if err != nil {
+		t.Errorf("Parses returned error: %v", err)
+	}
+
+	if count != 1000 {
+		t.Errorf("ParseCSV did not exported all records")
+	}
+}
+
+func TestParseCSVProduceErrorWhenCannotOpenCSVFile(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	saver := SaveResultsStub
+
+	file_path := "../samples/sample_abrakadabra.csv"
+
+	_, err := ParseCSV(file_path, saver, collection, mng_context, time.Now().Unix())
+
+	if err == nil {
+		t.Errorf("Parser allows to open non-existing files")
+	}
+}
+
+func TestParseCSVProduceErrorWhenCSVFilesHasIncorrectHeaders(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	saver := SaveResultsStub
+
+	file_path := "../samples/invalid_headers.csv"
+
+	_, err := ParseCSV(file_path, saver, collection, mng_context, time.Now().Unix())
+
+	if err == nil {
+		t.Errorf("Parser successfully parsed CSV with invalid headers: %s\n", file_path)
+	}
+}
+
+func TestParseCSVProduceErrorWhenCSVFilesHasIncorrectStructure(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	saver := SaveResultsStub
+
+	file_path := "../samples/invalid_structure.csv"
+
+	_, err := ParseCSV(file_path, saver, collection, mng_context, time.Now().Unix())
+
+	if err == nil {
+		t.Errorf("Parser successfully parsed CSV with invalid structure: %s\n", file_path)
+	}
+}
+
+func TestParseCSVProduceErrorWhenCSVFilesHasIncorrectValues(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	saver := SaveResultsStub
+
+	file_path := "../samples/invalid_structure.csv"
+
+	_, err := ParseCSV(file_path, saver, collection, mng_context, time.Now().Unix())
+
+	if err == nil {
+		t.Errorf("Parser successfully parsed CSV with invalid values: %s\n", file_path)
 	}
 }
