@@ -25,13 +25,6 @@ import (
 	"os"
 )
 
-var server_address string;
-var server_port int;
-
-var mongo_address string;
-var mongo_port int;
-
-var show_help bool;
 
 const (
 	DEFAULT_SERVER_ADDRESS = "127.0.0.1"
@@ -59,6 +52,14 @@ type Record struct {
 	TimesPriceChanged int64
 	RequestTime int64
 }
+
+var server_address = DEFAULT_SERVER_ADDRESS
+var server_port = DEFAULT_SERVER_PORT
+
+var mongo_address = DEFAULT_MONGO_ADDRESS
+var mongo_port = DEFAULT_MONGO_PORT
+
+var show_help = false
 
 func (s *server) Fetch(ctx context.Context, in *api.FetchRequest) (*api.FetchResponse, error) {
 	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -260,7 +261,6 @@ func SaveResults(collection mongo.Collection, mng_context context.Context, produ
 			saved = true
 		} else { // need to update existing record
 			if(result.Price == price) { // exit if nothing changed
-				fmt.Printf("Prices comparison: %f and %f\n", result.Price, price)
  				return false
  			}
 
@@ -280,8 +280,6 @@ func SaveResults(collection mongo.Collection, mng_context context.Context, produ
 
   	  saved = true
   	}
-
-  	fmt.Printf("[+] %s successfully updated!\n", product)
 
   	return saved
 }
@@ -336,7 +334,7 @@ func DownloadFile(url string, filepath string) error {
 	_ = os.Mkdir(DOWNLOAD_DIRECTORY, 0777)
 
 	// ErrorCheck(err)
-	
+
 	out, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0600)
 	defer out.Close()
 

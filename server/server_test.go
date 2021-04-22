@@ -1,6 +1,11 @@
 package main
 
 import (
+	"go.mongodb.org/mongo-driver/bson"
+
+	"context"
+	"time"
+
 	"github.com/gabriel-vasile/mimetype"
 	"testing"
 	"regexp"
@@ -14,9 +19,6 @@ func TestGetCursorIndex(t *testing.T) {
 }
 
 func TestMongoAddress(t *testing.T) {
-	mongo_address = "127.0.0.1"
-	mongo_port = 27017
-
 	mongo_url := fmt.Sprintf("mongodb://%s:%d", mongo_address, mongo_port)
 	
 	func_result := MongoAddress()
@@ -27,9 +29,6 @@ func TestMongoAddress(t *testing.T) {
 }
 
 func TestSocketAddress(t *testing.T) {
-	server_address = "127.0.0.1"
-	server_port = 55555
-
 	server_socket := fmt.Sprintf("%s:%d", server_address, server_port)
 
 	func_result := SocketAddress()
@@ -137,4 +136,64 @@ func TestDownloadFileWithWrongMimeType(t *testing.T) {
 	}
 
 	DeleteFile(tmp_file_path)	
+}
+
+func TestSuccessfullySaveResults(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	product := "test_product_1111111111"
+	price := 99.9
+
+	result := SaveResults(collection, mng_context, product, price, time.Now().Unix())
+		
+	if result == false {
+		t.Errorf("Cannot save results to MongoDB\n")
+	} else {
+		_, err := collection.DeleteOne(mng_context, bson.M{"product": product})
+
+		if err != nil {
+			t.Errorf("Cannot delete record from MongoDB\n")
+		}
+	}
+}
+
+func TestDontSaveProductsWithTheSamePrice(t *testing.T) {
+	mongo_address = "127.0.0.1"
+
+	mng_context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client, collection := InitMongo(mng_context)
+
+	defer client.Disconnect(mng_context)
+
+	product := "test_product_1111111111"
+	price := 99.9
+
+	result := SaveResults(collection, mng_context, product, price, time.Now().Unix())
+		
+	if result == false {
+		t.Errorf("Cannot save results to MongoDB\n")
+	} 
+
+	result = SaveResults(collection, mng_context, product, price, time.Now().Unix())	
+
+	if result == true {
+		t.Errorf("Can save record with equal prices")
+	}
+
+	_, err := collection.DeleteOne(mng_context, bson.M{"product": product})
+
+	if err != nil {
+		t.Errorf("Cannot delete record from MongoDB\n")
+	}
 }

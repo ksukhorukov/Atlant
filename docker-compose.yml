@@ -4,7 +4,10 @@ services:
     image: "mongo:latest"
     hostname: mongo
     container_name: mongo
-    entrypoint: ["/usr/bin/mongod","--bind_ip_all"]
+    # entrypoint: ["/usr/bin/mongod","--bind_ip_all"]
+    command: mongod --bind_ip 0.0.0.0
+    ports:
+      - 27017:27017
   atlant_server_1:
     image: "golang:latest"
     hostname: atlant_server_1
